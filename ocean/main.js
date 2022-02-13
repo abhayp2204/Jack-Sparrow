@@ -14,13 +14,15 @@ let hover = hoverFactor * radius;
 let renderer;
 let controls;
 let water;
+
 let sun;
-let boat;
 let sign;
 let flag;
+
 let sunVol = 0.004;
 let horizonDistance = 100000;
 let vec = new THREE.Vector3(); 
+let boat;
 let boatSpeed = 20;
 const PI = 3.14159;
 
@@ -162,7 +164,7 @@ function addBoat() {
     const buoyancy = 1;
 
     const geometry = new THREE.SphereGeometry(radius, 24, 24);
-    const material = new THREE.MeshStandardMaterial({color: 0xffffff});
+    const material = new THREE.MeshStandardMaterial({color: 0xfadf1f});
     boat = new THREE.Mesh(geometry, material);
 
     const x = 0;
