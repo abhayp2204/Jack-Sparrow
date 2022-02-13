@@ -8,14 +8,20 @@ import { PerspectiveCamera } from "three";
 
 let camera;
 let scene;
+let radius = 10;
+let hoverFactor = 1;
+let hover = hoverFactor * radius;
 let renderer;
 let controls;
 let water;
 let sun;
 let boat;
-let dir;
+let sign;
+let flag;
+let sunVol = 0.004;
+let horizonDistance = 100000;
 let vec = new THREE.Vector3(); 
-// const boat;
+let boatSpeed = 20;
 const PI = 3.14159;
 
 // Keycodes
@@ -23,9 +29,14 @@ const keyW = 87;
 const keyA = 65;
 const keyS = 83;
 const keyD = 68;
+const keySpace = 32;
 
 let east = new THREE.Vector3(0, 0, -1);
 
+const sky = new Sky();
+const skyUniforms = sky.material.uniforms;
+
+sign = 1;
 init();
 addBoat();
 animate();
@@ -44,12 +55,12 @@ function init() {
         1,
         20000
     );
-    camera.position.set(0, 10, 100);
+    camera.position.set(0, hover, radius*2);
 
     sun = new THREE.Vector3();
 
     // Water
-    const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
+    const waterGeometry = new THREE.PlaneGeometry(horizonDistance, horizonDistance);
 
     water = new Water(waterGeometry, {
         textureWidth: 512,
@@ -67,31 +78,20 @@ function init() {
         fog: scene.fog !== undefined,
     });
 
-    water.rotation.x = -Math.PI / 2;
+    water.rotation.x = -Math.PI/2;
 
     scene.add(water);
 
     // Sky 1
-    const sky1 = new Sky();
-    sky1.scale.setScalar(10000);
-    scene.add(sky1);
+    // const sky = new Sky();
+    sky.scale.setScalar(horizonDistance);
+    scene.add(sky);
     
-    const skyUniforms1 = sky1.material.uniforms;
-    skyUniforms1["turbidity"].value = 10;
-    skyUniforms1["rayleigh"].value = 2;
-    skyUniforms1["mieCoefficient"].value = 0.004;
-    skyUniforms1["mieDirectionalG"].value = 1.001;
-    
-    // Sky 2
-    const sky2 = new Sky();
-    sky2.scale.setScalar(10000);
-    // scene.add(sky2);
-
-    const skyUniforms2 = sky2.material.uniforms;
-    skyUniforms2["turbidity"].value = 10;
-    skyUniforms2["rayleigh"].value = 2;
-    skyUniforms2["mieCoefficient"].value = 0.004;
-    skyUniforms2["mieDirectionalG"].value = 1.8;
+    // const skyUniforms = sky.material.uniforms;
+    skyUniforms["turbidity"].value = 10;
+    skyUniforms["rayleigh"].value = 2;
+    skyUniforms["mieCoefficient"].value = 0.004;
+    skyUniforms["mieDirectionalG"].value = 0.6;
     
     const parameters = {
         elevation: 1,
@@ -112,12 +112,11 @@ function init() {
         scene.environment = pmremGenerator.fromScene(sky).texture;
     }
 
-    updateSun(sky1);
-    // updateSun(sky2);
+    updateSun(sky);
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.maxPolarAngle = Math.PI * 0.495;
-    controls.target.set(0, 10, 0);
+    controls.target.set(0, hover, 0);
     controls.minDistance = 40.0;
     controls.maxDistance = 200.0;
     controls.update();
@@ -136,6 +135,17 @@ function onWindowResize() {
 
 function animate() {
     requestAnimationFrame(animate);
+
+    skyUniforms["mieDirectionalG"].value += sunVol * sign;
+    if(skyUniforms["mieDirectionalG"].value >= 2)
+    {
+        sign = -1;
+    }
+    if(skyUniforms["mieDirectionalG"].value <= 0.5)
+    {
+        sign = 1;
+    }
+
     render();
 }
 
@@ -146,17 +156,20 @@ function render() {
 
 // Boat
 function addBoat() {
-    const radius = 20;
-    const density = 10;
+    const mass = 50000;
+    const volume = 4/3*PI*(radius**3);
+    const density = mass/volume;
+    const buoyancy = 1;
+
     const geometry = new THREE.SphereGeometry(radius, 24, 24);
     const material = new THREE.MeshStandardMaterial({color: 0xffffff});
     boat = new THREE.Mesh(geometry, material);
 
     const x = 0;
-    const y = radius - density;
+    const y = density*buoyancy;
     const z = 0;
 
-    boat.position.set(x, 10, z);
+    boat.position.set(x, y/2, z);
     scene.add(boat);
 };
 
@@ -173,10 +186,8 @@ function direction() {
 
 function move(obj, angle, phi)
 {
-    let speed = 30;
-
-    obj.position.x += speed * Math.sin(angle - phi);
-    obj.position.z -= speed * Math.cos(angle - phi);
+    obj.position.x += boatSpeed * Math.sin(angle - phi);
+    obj.position.z -= boatSpeed * Math.cos(angle - phi);
 }
 
 document.addEventListener('keydown', function(event) {
@@ -212,7 +223,8 @@ document.addEventListener('keydown', function(event) {
 function stats() {
     // Stats
     console.clear();
-    console.log("Boat Pos : ", boat.position);
-    console.log("Camera Pos : ", camera.position);
-    console.log("Distance", boat.position.distanceTo(camera.position));
+    console.log(skyUniforms["mieDirectionalG"].value);
+    // console.log("Boat Pos : ", boat.position);
+    // console.log("Camera Pos : ", camera.position);
+    // console.log("Distance", boat.position.distanceTo(camera.position));
 }
