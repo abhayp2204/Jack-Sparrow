@@ -25,10 +25,9 @@ let vec = new THREE.Vector3();
 let ship;
 let shipRadius = 10;
 let hover = hoverFactor * shipRadius;
-let shipSpeed = 3;
+let shipSpeed = 5;
 
 // Pirate Ship
-let pirateShip;
 let pirateShipSpeed = 1;
 let pirateShipRadius = 10;
 let pirateShipAlive = true;
@@ -72,7 +71,11 @@ const cannonBallColor = red;
 sign = 1;
 init();
 addShip();
-addPirateShip();
+
+let p1 = addPirateShip();
+let p2 = addPirateShip();
+let p3 = addPirateShip();
+
 addCannonBall();
 animate();
 
@@ -94,7 +97,7 @@ function addShip() {
 function addPirateShip() {
     const geometry = new THREE.SphereGeometry(shipRadius, 24, 24);
     const material = new THREE.MeshStandardMaterial({color: pirateShipColor});
-    pirateShip = new THREE.Mesh(geometry, material);
+    let ps = new THREE.Mesh(geometry, material);
 
     var location = random_spawn();
     const x = location[0];
@@ -103,8 +106,9 @@ function addPirateShip() {
 
     console.log(x);
 
-    pirateShip.position.set(x, y, z);
-    scene.add(pirateShip);
+    ps.position.set(x, y, z);
+    scene.add(ps);
+    return ps;
 };
 
 // Cannon Ball
@@ -146,24 +150,36 @@ function moveCannonBall() {
         cannonBall.position.set(ship.position.x, ship.position.y + shipRadius, ship.position.z);
     }
 
-    let dtps = pirateShip.position.distanceTo(cannonBall.position)
-    if(dtps < 20)
-    {
-        pirateShipAlive = false;
-        scene.remove(pirateShip);
-        console.log("Hit!")
-    }
+    destroyPirateShip(p1);
+    destroyPirateShip(p2);
+    destroyPirateShip(p3);
+    // let dtps;
+    // dtps = p1.position.distanceTo(cannonBall.position)
+    // if(dtps < 20)
+    // {
+    //     pirateShipAlive = false;
+    //     scene.remove(p1);
+    //     console.log("Hit!")
+    // }
     // console.log(dtps);
 }
 
-function movePirateShip() {
-    // Get direction: pirateShip ---> Ship (normalized)
-    targetDir = direction(ship, pirateShip);
+function destroyPirateShip(ps) {
+    let dtps = ps.position.distanceTo(cannonBall.position);
+    if(dtps < 20)
+    {
+        // ps = false;
+        scene.remove(ps);
+        console.log("Hit!")
+    }
+}
 
-    // Move in that direction
-    pirateShip.position.x += targetDir.x * pirateShipSpeed * 1.6;
-    // pirateShip.position.y += targetDir.y * shipSpeed * 2;
-    pirateShip.position.z += targetDir.z * pirateShipSpeed * 1.6;
+function movePirateShip(ps) {
+    // Get direction: pirateShip ---> Ship (normalized)
+    targetDir = direction(ship, ps);
+
+    ps.position.x += targetDir.x * pirateShipSpeed * 1.6;
+    ps.position.z += targetDir.z * pirateShipSpeed * 1.6;
 }
 
 document.addEventListener('keydown', function(event) {
@@ -225,7 +241,9 @@ function animate() {
         sign = 1;
     }
 
-    movePirateShip();
+    movePirateShip(p1);
+    movePirateShip(p2);
+    movePirateShip(p3);
     moveCannonBall();
     // cannonBall.position.set(ship.position.x, ship.position.y + shipRadius, ship.position.z);
     render();
