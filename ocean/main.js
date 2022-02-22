@@ -4,7 +4,8 @@ import './style.css'
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Water } from "three/examples/jsm/objects/Water.js";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
-import { PerspectiveCamera } from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+// import { PerspectiveCamera } from "three";
 
 let camera;
 let scene;
@@ -17,12 +18,13 @@ let sun;
 let sign;
 let flag;
 
-let sunVol = 0.004;
+let sunVol = 0.003;
 let horizonDistance = 5000;
 let vec = new THREE.Vector3(); 
 
 // Ship
 let ship;
+let shipSize = 7;
 let shipRadius = 10;
 let hover = hoverFactor * shipRadius;
 let shipSpeed = 5;
@@ -69,6 +71,28 @@ const pirateShipColor = black;
 const cannonBallColor = red;
 
 sign = 1;
+
+const loader = new GLTFLoader();
+
+class Boat {
+    constructor() {
+        loader.load("boat/scene.gltf", (gltf) => {
+            console.log(gltf);
+            scene.add(gltf.scene);
+            gltf.scene.scale.set(shipSize, shipSize, shipSize);
+            gltf.scene.position.set(0, 30, 0);
+
+            this.boat = gltf.scene;
+        })        
+    }
+
+    updateBoat() {
+        if(this.boat) {
+            this.boat.rotation.y += 0.05;
+        }
+    }
+}
+const boat = new Boat();
 init();
 addShip();
 
@@ -170,7 +194,7 @@ function destroyPirateShip(ps) {
     {
         // ps = false;
         scene.remove(ps);
-        console.log("Hit!")
+        // console.log("Hit!")
     }
 }
 
@@ -194,6 +218,7 @@ document.addEventListener('keydown', function(event) {
         // Front
         case keyW: 
             move(ship, angle, 0);
+            // move(gltf.scene, angle, 0);
             move(camera, angle, 0);
             move(cannonBall, angle, 0);
             break;
@@ -241,6 +266,7 @@ function animate() {
         sign = 1;
     }
 
+    boat.updateBoat();
     movePirateShip(p1);
     movePirateShip(p2);
     movePirateShip(p3);
@@ -284,7 +310,7 @@ function init() {
         ),
         sunDirection: new THREE.Vector3(),
         sunColor: 0xffffff,
-        waterColor: 0x001e0f,
+        waterColor: 0x000e0f,
         distortionScale: 3.7,
         fog: scene.fog !== undefined,
     });
